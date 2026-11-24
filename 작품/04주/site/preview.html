@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Design system preview · Week 04</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--color-bg);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    padding: var(--space-m);
+    text-align: center;
+    text-transform: uppercase;
+  }
+  h1 {
+    font-family: var(--font-display);
+    font-size: var(--size-h1);
+    font-weight: 900;
+    line-height: 1;
+    text-transform: uppercase;
+    margin-bottom: var(--space-s);
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+  .caption {
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-ink);
+    margin-bottom: var(--space-section);
+  }
+  .card {
+    max-width: 480px;
+    margin: 0 auto var(--space-m);
+  }
+  .reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+  .reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .card img {
+    width: 100%;
+    aspect-ratio: 4/5;
+    object-fit: cover;
+    border-radius: var(--radius);
+    display: block;
+  }
+  .card h3 {
+    font-family: var(--font-display);
+    font-size: var(--size-h3);
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    margin-top: var(--space-m);
+    border-bottom: 3px solid var(--color-accent);
+    display: inline-block;
+    padding-bottom: 4px;
+  }
+  .card p {
+    font-size: var(--size-body);
+    font-weight: 700;
+    line-height: 1.4;
+    color: var(--color-ink);
+    margin-top: var(--space-xs);
+  }
+  .muted { color: var(--color-muted); font-size: 0.85rem; margin-top: var(--space-xs); }
+</style>
+</head>
+<body>
+  <h1>Unfamiliar Familiar</h1>
+  <p class="caption">Same search words. Why these five?</p>
+
+  <div class="card reveal">
+    <img src="assets/sky1.jpg" alt="Sky sample photo">
+    <h3>Sky</h3>
+    <p>I chose these because the color of the sky and the texture of the clouds are never quite the same twice, even when I return to the same stretch of sky.</p>
+    <p class="muted">This card expands into a 5-photo grid in STEP 04.</p>
+  </div>
+
+  <script>
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15 });
+    document.querySelectorAll('.reveal').forEach(function (el) {
+      observer.observe(el);
+    });
+  </script>
+</body>
+</html>

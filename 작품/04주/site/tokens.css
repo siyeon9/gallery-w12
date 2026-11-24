@@ -1,0 +1,22 @@
+/* DESIGN.md 토큰 표와 1:1. 값은 여기에만 적는다. */
+:root {
+  --color-bg: #FFFFFF;
+  --color-ink: #222A36;
+  --color-muted: #8A8F98;
+  --color-accent: #DCCBC3;
+  --font-body: 'Archivo', sans-serif;
+  --font-display: 'Archivo', sans-serif;
+  --size-body: 1.05rem;
+  --size-h3: 1.5rem;
+  --size-h2: 2rem;
+  --size-h1: clamp(2.25rem, 11vw, 8rem);
+  --space-xs: 0.5rem;
+  --space-s: 1rem;
+  --space-m: 2rem;
+  --space-l: 4rem;
+  --space-section: 4.8rem;
+  --radius: 0px;
+  --max-width: 1200px;
+  --reveal-offset: 1.75rem;
+  --marquee-duration: 22s;
+}
