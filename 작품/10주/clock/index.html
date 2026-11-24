@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>하루의 다섯 곡 · 10주</title>
+<style>
+  @font-face { font-family: P; src: url("../../fonts/PretendardVariable.woff2") format("woff2"); font-weight: 100 900; }
+  :root { --bg: #eef3f1; --ink: #16201d; --mint: #2ec5c0; --line: #d6e4e0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { background: var(--bg); color: var(--ink); font-family: P, -apple-system, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; padding: 24px 16px 32px; overflow: hidden; }
+  .clock { width: min(720px, 92vw); }
+  .clock svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .seg { transition: fill .35s ease; }
+  .chips { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; width: min(620px, 92vw); }
+  .chip { appearance: none; border: 1px solid var(--line); background: #fff; color: var(--ink); border-radius: 10px; padding: 10px 4px 9px; font: inherit; cursor: pointer; text-align: center; transition: background .25s, color .25s, border-color .25s; }
+  .chip b { display: block; font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+  .chip span { display: block; font-size: 11px; opacity: .7; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chip[aria-pressed="true"] { background: var(--mint); border-color: var(--mint); color: #fff; }
+  .chip:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .note { width: min(620px, 92vw); text-align: center; min-height: 52px; }
+  .note p { margin: 0; font-size: 16px; line-height: 1.6; text-wrap: balance; word-break: keep-all; }
+  .note a { display: inline-block; margin-top: 6px; font-size: 13px; color: var(--ink); text-underline-offset: 4px; }
+  @media (max-width: 560px) { .chip b { font-size: 13px; } .chip span { display: none; } .note p { font-size: 14px; } }
+  @media (prefers-reduced-motion: reduce) { .seg, .chip { transition: none; } }
+</style>
+</head>
+<body>
+<div class="clock" aria-live="polite"><svg id="clk" viewBox="0 0 640 300" role="img" aria-label="하루의 다섯 곡 시계"></svg></div>
+<div class="chips" id="chips" role="group" aria-label="곡 고르기"></div>
+<div class="note"><p id="why"></p><a id="yt" target="_blank" rel="noopener">유튜브에서 듣기 ↗</a></div>
+<script>
+/* 10주 음악수집.md의 다섯 곡. 시간은 '언제 듣나' 답을 시계 숫자로 옮긴 것이다(학생이 정하면 바꾼다). */
+const T = [
+  { t: "07:30", ap: "AM", when: "눈 뜰 때", title: "아윌다이포유♥x3", artist: "잔나비", yt: "45GQdk_z3po", cover: "#f3d9a8",
+    why: "눈을 뜨고 하루를 시작할 때 듣는 곡입니다. 곡의 분위기가 밝아서 들으면 기분 좋게 아침을 맞이합니다." },
+  { t: "09:10", ap: "AM", when: "집을 나설 때", title: "sunny days", artist: "wave to earth", yt: "hRjC3ek0Oxk", cover: "#bfe3ee",
+    why: "집을 나서서 이동하는 길에 듣는 곡입니다. 음악으로도 맑은 날씨가 느껴져서 이동길의 설렘이 느껴집니다." },
+  { t: "03:00", ap: "PM", when: "잠시 쉴 때", title: "UNDERCOVER", artist: "OSUN", yt: "99qOyvf7kdw", cover: "#d9d4ea",
+    why: "사운드가 좋아서 하루 중 언제 들어도 좋은 곡입니다. 특히 잠시 쉬고 싶을 때 멍 때리며 듣기 좋습니다." },
+  { t: "07:40", ap: "PM", when: "돌아가는 길", title: "Last Night on Earth", artist: "Green Day", yt: "oVZg-WwgivI", cover: "#cfd6dc",
+    why: "하루를 마무리하고 집으로 돌아가는 길에 듣는 곡입니다. 차분하고 서정적인 분위기의 노래로, 들으면 위로가 됩니다." },
+  { t: "11:50", ap: "PM", when: "잠들기 전", title: "Cheapest Flight", artist: "PREP", yt: "rqvA7T5FUTQ", cover: "#2b3440",
+    why: "잠들기 전 하루를 마무리할 때 듣는 곡입니다. 독특한 사운드와 곡의 분위기가 기분을 편안하게 만들어줍니다." },
+];
+const INK = "#16201d", OFF = "#e3e9e7", MINT = "#2ec5c0", NS = "http://www.w3.org/2000/svg";
+const SEG = { 0: "abcdef", 1: "bc", 2: "abged", 3: "abgcd", 4: "fgbc", 5: "afgcd", 6: "afgedc", 7: "abc", 8: "abcdefg", 9: "abcdfg" };
+const svg = document.getElementById("clk");
+const el = (tag, a, p) => { const e = document.createElementNS(NS, tag); for (const k in a) e.setAttribute(k, a[k]); (p || svg).appendChild(e); return e; };
+
+/* the body: a rounded white clock, a soft shadow, a grey bezel, the pale LCD */
+el("ellipse", { cx: 320, cy: 292, rx: 280, ry: 9, fill: "#000", opacity: .07 });
+el("rect", { x: 20, y: 22, width: 600, height: 260, rx: 74, fill: "#d8dedc" });
+el("rect", { x: 20, y: 14, width: 600, height: 260, rx: 74, fill: "#fbfbfa", stroke: "#e3e7e6" });
+el("rect", { x: 52, y: 44, width: 536, height: 200, rx: 40, fill: "#e1e6e4" });
+el("rect", { x: 66, y: 58, width: 508, height: 172, rx: 30, fill: "#f4f7f6" });
+
+/* four 7-segment digits */
+const digits = [];
+function makeDigit(x, y, w, h) {
+  const t = w * .17, S = { a: [x + t, y, w - 2 * t, t], g: [x + t, y + h / 2 - t / 2, w - 2 * t, t], d: [x + t, y + h - t, w - 2 * t, t],
+    f: [x, y + t, t, h / 2 - t], b: [x + w - t, y + t, t, h / 2 - t], e: [x, y + h / 2, t, h / 2 - t], c: [x + w - t, y + h / 2, t, h / 2 - t] };
+  const d = {}; for (const k in S) { const [a, b, c, e] = S[k]; d[k] = el("rect", { x: a, y: b, width: c, height: e, rx: t / 2, class: "seg", fill: OFF }); }
+  return d;
+}
+const DH = 116, DW = 58, GAP = 12, X0 = 92, Y0 = 82;
+digits.push(makeDigit(X0, Y0, DW, DH), makeDigit(X0 + DW + GAP, Y0, DW, DH));
+const colonX = X0 + 2 * (DW + GAP) + 6;
+el("circle", { cx: colonX, cy: Y0 + DH * .32, r: 6, fill: INK }); el("circle", { cx: colonX, cy: Y0 + DH * .68, r: 6, fill: INK });
+digits.push(makeDigit(colonX + 18, Y0, DW, DH), makeDigit(colonX + 18 + DW + GAP, Y0, DW, DH));
+const ap = el("text", { x: X0, y: Y0 - 8, "font-size": 13, "font-weight": 700, fill: INK, "font-family": "P, sans-serif", "letter-spacing": "1" });
+const when = el("text", { x: X0, y: Y0 + DH + 24, "font-size": 13, fill: MINT, "font-weight": 600, "font-family": "P, sans-serif" });
+
+/* the side panel, where a real clock shows ALARM · DATE · TEMP: the cover and the song */
+el("line", { x1: 420, y1: 74, x2: 420, y2: 214, stroke: INK, "stroke-opacity": .18 });
+el("text", { x: 436, y: 82, "font-size": 10, "font-weight": 700, fill: INK, opacity: .55, "font-family": "P, sans-serif", "letter-spacing": "2" }).textContent = "NOW PLAYING";
+const cv = el("g", {});
+const cvBg = el("rect", { x: 436, y: 92, width: 70, height: 70, rx: 4, fill: "#ccc" }, cv);
+el("rect", { x: 441, y: 97, width: 60, height: 60, fill: "none", stroke: INK, "stroke-opacity": .2 }, cv);
+const cvA = el("text", { x: 444, y: 109, "font-size": 7, "font-weight": 700, "font-family": "P, sans-serif" }, cv);
+const cvT = el("text", { x: 444, y: 154, "font-size": 8, "font-weight": 700, "font-family": "P, sans-serif" }, cv);
+const trk = el("text", { x: 516, y: 104, "font-size": 22, "font-weight": 700, fill: MINT, "font-family": "P, sans-serif" });
+const ttl = el("text", { x: 436, y: 186, "font-size": 15, "font-weight": 700, fill: INK, "font-family": "P, sans-serif" });
+const art = el("text", { x: 436, y: 205, "font-size": 12, fill: INK, opacity: .6, "font-family": "P, sans-serif" });
+
+const chips = document.getElementById("chips"), why = document.getElementById("why"), yt = document.getElementById("yt");
+T.forEach((s, k) => { const b = document.createElement("button"); b.className = "chip"; b.type = "button"; b.innerHTML = `<b>${s.t}</b><span>${s.title}</span>`; b.onclick = () => show(k); chips.appendChild(b); });
+const clip = (s, n) => s.length > n ? s.slice(0, n - 1) + "…" : s;
+let cur = -1;
+function show(k) {
+  k = (k + T.length) % T.length; if (k === cur) return; cur = k; const s = T[k];
+  s.t.replace(":", "").split("").forEach((n, i) => { const on = SEG[+n]; for (const seg in digits[i]) digits[i][seg].setAttribute("fill", on.includes(seg) ? INK : OFF); });
+  ap.textContent = s.ap; when.textContent = s.when;
+  const dark = s.cover === "#2b3440", c = dark ? "#eef3f1" : INK;
+  cvBg.setAttribute("fill", s.cover); cvA.setAttribute("fill", c); cvT.setAttribute("fill", c);
+  cvA.textContent = s.artist; cvT.textContent = clip(s.title, 13);
+  trk.textContent = String(k + 1).padStart(2, "0"); ttl.textContent = clip(s.title, 18); art.textContent = s.artist;
+  why.textContent = s.why; yt.href = "https://www.youtube.com/watch?v=" + s.yt;
+  [...chips.children].forEach((b, i) => b.setAttribute("aria-pressed", String(i === k)));
+}
+show(0);
+/* wheel and arrow keys move through the day */
+let lock = false;
+addEventListener("wheel", e => { const d = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX; if (!d || lock) return; lock = true; show(cur + (d > 0 ? 1 : -1)); setTimeout(() => lock = false, 450); }, { passive: true });
+addEventListener("keydown", e => { if (e.key === "ArrowRight" || e.key === "ArrowDown") show(cur + 1); if (e.key === "ArrowLeft" || e.key === "ArrowUp") show(cur - 1); });
+</script>
+</body>
+</html>
